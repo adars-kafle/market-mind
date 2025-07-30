@@ -62,6 +62,11 @@ export async function getStocks(page: number, pageSize: number): Promise<{stocks
     };
 }
 
+export async function getStockByTicker(ticker: string): Promise<Stock | undefined> {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return mockStocks.find(stock => stock.ticker.toUpperCase() === ticker.toUpperCase());
+}
+
 
 export async function getAnalysis(ticker: string): Promise<AnalysisResult> {
   // Validate ticker

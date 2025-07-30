@@ -11,19 +11,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { getAnalysis, type AnalysisResult } from "@/app/actions";
 import { Header } from "@/components/header";
-import { AnalysisResults } from "@/components/analysis-results";
 import { StockTable } from "@/components/stock-table";
-import { Separator } from "@/components/ui/separator";
 
 const formSchema = z.object({
   ticker: z.string().min(1, "Ticker is required.").max(10, "Ticker is too long."),
 });
 
 export function MarketMindPage() {
-  const [analysis, setAnalysis] = React.useState<AnalysisResult | null>(null);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isSearching, setIsSearching] = React.useState(false);
+  const stockTableRef = React.useRef<{ focusOnTicker: (ticker: string) => void }>(null);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -34,21 +31,21 @@ export function MarketMindPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true);
-    setAnalysis(null);
+    setIsSearching(true);
     try {
-      const result = await getAnalysis(values.ticker.toUpperCase());
-      setAnalysis(result);
+        if (stockTableRef.current) {
+            stockTableRef.current.focusOnTicker(values.ticker.toUpperCase());
+        }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
       toast({
         variant: "destructive",
-        title: "Analysis Failed",
+        title: "Search Failed",
         description: errorMessage,
       });
-      setAnalysis(null);
     } finally {
-      setIsLoading(false);
+      setIsSearching(false);
+      form.reset();
     }
   }
 
@@ -77,38 +74,30 @@ export function MarketMindPage() {
                       <FormControl>
                         <div className="relative">
                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                           <Input placeholder="Enter a stock ticker (e.g., AAPL)" className="pl-10 text-base" {...field} />
+                           <Input placeholder="Enter a stock ticker to find in the table (e.g., AAPL)" className="pl-10 text-base" {...field} />
                         </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <Button type="submit" size="lg" disabled={isLoading}>
-                  {isLoading ? (
+                <Button type="submit" size="lg" disabled={isSearching}>
+                  {isSearching ? (
                     <>
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Analyzing...
+                      Searching...
                     </>
                   ) : (
-                    "Analyze"
+                    "Search"
                   )}
                 </Button>
               </form>
             </Form>
           </div>
-          
-          <div className="mt-8 md:mt-12">
-            {(isLoading || analysis) && (
-              <AnalysisResults analysis={analysis} isLoading={isLoading} />
-            )}
-          </div>
 
-          <Separator className="my-8 md:my-12" />
-
-          <div className="mt-8 md:mt-12">
-            <h2 className="text-3xl font-headline font-bold text-center mb-8">Stock Market Overview</h2>
-            <StockTable />
+          <div className="mt-12 md:mt-16">
+            <h2 className="text-3xl font-headline font-bold text-center mb-8">Market Overview</h2>
+            <StockTable ref={stockTableRef} />
           </div>
         </div>
       </main>
