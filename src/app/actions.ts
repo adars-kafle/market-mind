@@ -6,6 +6,7 @@ import { z } from "zod";
 export interface AnalysisResult {
   ticker: string;
   expectedMove: number;
+  overallScore: number;
   scores: {
     sentiment: number;
     technicalPatterns: number;
@@ -123,7 +124,7 @@ export async function getAnalysis(ticker: string): Promise<AnalysisResult> {
       (scores.sentiment * 0.20) +
       (scores.technicalPatterns * 0.20) +
       (scores.relativeStrength * 0.20) +
-      (scores.shortInterest * 0.10) +
+      ((10 - scores.shortInterest) * 0.10) + // Invert short interest score
       (scores.earningsCatalyst * 0.15) +
       (scores.insiderActivity * 0.07) +
       (scores.analystSentiment * 0.08);
@@ -133,8 +134,8 @@ export async function getAnalysis(ticker: string): Promise<AnalysisResult> {
   return {
     ticker: validatedTicker,
     expectedMove,
+    overallScore: weightedScore,
     scores,
     sentimentAnalysis: sentimentAnalysisResult,
   };
 }
-

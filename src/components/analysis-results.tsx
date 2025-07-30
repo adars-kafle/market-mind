@@ -16,11 +16,15 @@ import {
   Users,
   Shield,
   Zap,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  HelpCircle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ScoreCard } from "@/components/score-card";
+import { cn } from "@/lib/utils";
 
 
 interface AnalysisResultsProps {
@@ -64,9 +68,59 @@ export function AnalysisResults({ analysis, isLoading }: AnalysisResultsProps) {
   if (!analysis) {
     return null;
   }
+  
+  const getOverallSentiment = (score: number) => {
+      if (score > 7) return { text: "Strong Bullish", color: "text-green-600" };
+      if (score > 5.5) return { text: "Bullish", color: "text-green-500" };
+      if (score > 4.5) return { text: "Neutral", color: "text-yellow-500" };
+      if (score > 3) return { text: "Bearish", color: "text-red-500" };
+      return { text: "Strong Bearish", color: "text-red-600" };
+  }
+
+  const overallSentiment = getOverallSentiment(analysis.overallScore);
+  const moveDirection = analysis.expectedMove > 0 ? "up" : analysis.expectedMove < 0 ? "down" : "neutral";
 
   return (
     <div className="space-y-6">
+      <Card>
+          <CardHeader>
+              <CardTitle>Overall Analysis</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+              <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Overall Score</h4>
+                  <p className={cn("text-4xl font-bold mt-1", overallSentiment.color)}>
+                      {analysis.overallScore.toFixed(1)}/10
+                  </p>
+                  <p className={cn("text-sm font-semibold mt-1", overallSentiment.color)}>
+                      {overallSentiment.text}
+                  </p>
+              </div>
+              <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Expected Move</h4>
+                   <div className="flex items-center justify-center mt-1">
+                      {moveDirection === 'up' && <ArrowUpCircle className="h-10 w-10 text-green-500" />}
+                      {moveDirection === 'down' && <ArrowDownCircle className="h-10 w-10 text-red-500" />}
+                      {moveDirection === 'neutral' && <HelpCircle className="h-10 w-10 text-yellow-500" />}
+                      <span className={cn("text-4xl font-bold ml-2", moveDirection === 'up' ? 'text-green-600' : moveDirection === 'down' ? 'text-red-600' : 'text-yellow-600' )}>
+                        {analysis.expectedMove.toFixed(2)}%
+                      </span>
+                   </div>
+                   <p className="text-sm text-muted-foreground mt-1">in the short-term</p>
+              </div>
+              <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Final Insight</h4>
+                  <p className={cn("text-lg font-semibold mt-2", overallSentiment.color)}>
+                      {analysis.overallScore > 7 && "Strong buy candidate based on multiple factors."}
+                      {analysis.overallScore > 5.5 && analysis.overallScore <= 7 && "Favorable conditions for a long position."}
+                      {analysis.overallScore > 4.5 && analysis.overallScore <= 5.5 && "Neutral outlook. Wait for a clearer signal."}
+                      {analysis.overallScore > 3 && analysis.overallScore <= 4.5 && "Unfavorable conditions. Consider a short position."}
+                      {analysis.overallScore <= 3 && "Strong sell candidate. High bearish signal."}
+                  </p>
+              </div>
+          </CardContent>
+      </Card>
+      
       <Card>
         <CardHeader>
           <CardTitle>AI-Powered Sentiment Analysis</CardTitle>
@@ -120,6 +174,25 @@ function LoadingSkeleton() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
+          <Skeleton className="h-6 w-1/4" />
+        </CardHeader>
+        <CardContent className="flex justify-around">
+           <div className="text-center">
+              <Skeleton className="h-10 w-24 mb-2" />
+              <Skeleton className="h-4 w-20" />
+           </div>
+            <div className="text-center">
+              <Skeleton className="h-10 w-24 mb-2" />
+              <Skeleton className="h-4 w-20" />
+           </div>
+            <div className="text-center">
+              <Skeleton className="h-10 w-24 mb-2" />
+              <Skeleton className="h-4 w-20" />
+           </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
           <Skeleton className="h-6 w-3/4" />
         </CardHeader>
         <CardContent>
@@ -129,7 +202,7 @@ function LoadingSkeleton() {
         </CardContent>
       </Card>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[...Array(8)].map((_, i) => (
+        {[...Array(7)].map((_, i) => (
             <Card key={i}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <Skeleton className="h-4 w-2/3" />
@@ -146,4 +219,3 @@ function LoadingSkeleton() {
     </div>
   );
 }
-
