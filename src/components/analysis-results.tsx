@@ -1,3 +1,4 @@
+
 "use client";
 import type { AnalysisResult } from "@/app/actions";
 import {
@@ -64,12 +65,7 @@ export function AnalysisResults({ analysis, isLoading }: AnalysisResultsProps) {
   }
 
   if (!analysis) {
-    return (
-      <div className="text-center py-16">
-        <h2 className="font-headline text-2xl font-semibold">Ready for Analysis</h2>
-        <p className="mt-2 text-muted-foreground">Enter a stock ticker above to begin.</p>
-      </div>
-    );
+    return null;
   }
 
   return (
