@@ -7,14 +7,13 @@ export interface AnalysisResult {
   ticker: string;
   expectedMove: number;
   scores: {
+    sentiment: number;
     technicalPatterns: number;
-    movingAverage: number;
     relativeStrength: number;
     shortInterest: number;
-    sentiment: number;
-    analystSentiment: number;
-    insiderActivity: number;
     earningsCatalyst: number;
+    insiderActivity: number;
+    analystSentiment: number;
   };
   sentimentAnalysis: AnalyzeNewsSentimentOutput;
 }
@@ -108,19 +107,28 @@ export async function getAnalysis(ticker: string): Promise<AnalysisResult> {
   }
 
 
-  // Mock quantitative scoring
+  // Mock quantitative scoring based on specified weights
   const scores = {
-    technicalPatterns: randomInRange(3, 9),
-    movingAverage: randomInRange(4, 9.5),
-    relativeStrength: randomInRange(5, 8),
-    shortInterest: randomInRange(2, 9), // High score is bad for short interest
-    sentiment: (sentimentAnalysisResult.overallSentimentScore * 4.5) + 5, // Scale from [-1,1] to [0.5, 9.5]
-    analystSentiment: randomInRange(6, 9),
-    insiderActivity: randomInRange(3, 7),
-    earningsCatalyst: randomInRange(2, 8),
+    sentiment: (sentimentAnalysisResult.overallSentimentScore * 4.5) + 5, // 20%
+    technicalPatterns: randomInRange(3, 9.5), // 20% (RSI, MAs)
+    relativeStrength: randomInRange(2, 9),   // 20%
+    shortInterest: randomInRange(2, 7),      // 10% (High score is bad)
+    earningsCatalyst: randomInRange(4, 9),   // 15%
+    insiderActivity: randomInRange(3, 8),    // 7%
+    analystSentiment: randomInRange(5, 9),   // 8%
   };
   
-  const expectedMove = (Object.values(scores).reduce((a,b) => a+b, 0) / 80 - 0.5) * 5; // Simplified calculation for expected move %
+  // Simplified weighted calculation for expected move %
+  const weightedScore = 
+      (scores.sentiment * 0.20) +
+      (scores.technicalPatterns * 0.20) +
+      (scores.relativeStrength * 0.20) +
+      (scores.shortInterest * 0.10) +
+      (scores.earningsCatalyst * 0.15) +
+      (scores.insiderActivity * 0.07) +
+      (scores.analystSentiment * 0.08);
+
+  const expectedMove = (weightedScore / 10 - 0.5) * 5; 
 
   return {
     ticker: validatedTicker,
@@ -129,3 +137,4 @@ export async function getAnalysis(ticker: string): Promise<AnalysisResult> {
     sentimentAnalysis: sentimentAnalysisResult,
   };
 }
+

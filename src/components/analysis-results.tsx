@@ -1,4 +1,3 @@
-
 "use client";
 import type { AnalysisResult } from "@/app/actions";
 import {
@@ -31,7 +30,6 @@ interface AnalysisResultsProps {
 
 const scoreIcons: { [key: string]: React.ReactNode } = {
   technicalPatterns: <TrendingUp className="h-4 w-4" />,
-  movingAverage: <Activity className="h-4 w-4" />,
   relativeStrength: <Scaling className="h-4 w-4" />,
   shortInterest: <TrendingDown className="h-4 w-4" />,
   sentiment: <Smile className="h-4 w-4" />,
@@ -41,8 +39,7 @@ const scoreIcons: { [key: string]: React.ReactNode } = {
 };
 
 const scoreTitles: { [key: string]: string } = {
-  technicalPatterns: "Technical Patterns",
-  movingAverage: "Moving Average",
+  technicalPatterns: "Technical Score",
   relativeStrength: "Relative Strength",
   shortInterest: "Short Interest",
   sentiment: "News Sentiment",
@@ -149,3 +146,4 @@ function LoadingSkeleton() {
     </div>
   );
 }
+
