@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { getAnalysis, type AnalysisResult } from "@/app/actions";
 import { Header } from "@/components/header";
 import { AnalysisResults } from "@/components/analysis-results";
+import { StockTable } from "@/components/stock-table";
+import { Separator } from "@/components/ui/separator";
 
 const formSchema = z.object({
   ticker: z.string().min(1, "Ticker is required.").max(10, "Ticker is too long."),
@@ -97,6 +99,13 @@ export function MarketMindPage() {
 
           <div className="mt-8 md:mt-12">
             <AnalysisResults analysis={analysis} isLoading={isLoading} />
+          </div>
+
+          <Separator className="my-8 md:my-12" />
+
+          <div className="mt-8 md:mt-12">
+            <h2 className="text-3xl font-headline font-bold text-center mb-8">Stock Market Overview</h2>
+            <StockTable />
           </div>
         </div>
       </main>
