@@ -16,7 +16,6 @@ import { Header } from "@/components/header";
 import { AnalysisResults } from "@/components/analysis-results";
 import { StockTable } from "@/components/stock-table";
 import { Separator } from "@/components/ui/separator";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const formSchema = z.object({
   ticker: z.string().min(1, "Ticker is required.").max(10, "Ticker is too long."),
@@ -104,26 +103,6 @@ export function MarketMindPage() {
               <AnalysisResults analysis={analysis} isLoading={isLoading} />
             )}
           </div>
-
-          <Accordion type="single" collapsible className="w-full mt-8 md:mt-12 max-w-4xl mx-auto">
-            <AccordionItem value="item-1">
-              <AccordionTrigger className="text-2xl font-headline font-bold text-center">Strategy Explained</AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pt-4 space-y-4">
-                <p>MarketMind employs a multi-faceted quantitative strategy to evaluate the short-term trading potential of a stock. Our analysis is grounded in a combination of technical indicators, sentiment analysis, and fundamental data points. Each factor is scored on a 1-10 scale to provide a comprehensive outlook.</p>
-                <ul className="list-disc pl-5 space-y-2">
-                    <li><strong>Technical Patterns:</strong> We analyze chart patterns to identify potential bullish or bearish signals. A high score indicates a favorable technical setup.</li>
-                    <li><strong>Moving Average:</strong> This score reflects the stock's trend relative to its key moving averages. A high score suggests a strong upward trend.</li>
-                    <li><strong>Relative Strength:</strong> Compares the stock's performance to the broader market. A high score means the stock is outperforming.</li>
-                    <li><strong>Short Interest:</strong> A high score here is a bearish signal, indicating a large number of investors are betting against the stock.</li>
-                    <li><strong>News Sentiment:</strong> Our AI analyzes recent news headlines to gauge market sentiment. Scores range from -1 (very negative) to +1 (very positive).</li>
-                    <li><strong>Analyst Sentiment:</strong> Reflects the consensus rating from professional financial analysts.</li>
-                    <li><strong>Insider Activity:</strong> Tracks buying and selling activity by company insiders. Significant buying can be a positive signal.</li>
-                    <li><strong>Earnings Catalyst:</strong> Measures the potential for an upcoming earnings report to act as a significant price catalyst.</li>
-                </ul>
-                <p>The final "Expected Move" is a synthesized prediction based on the aggregated scores, giving you a directional insight into the stock's potential over the next trading sessions.</p>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
 
           <Separator className="my-8 md:my-12" />
 

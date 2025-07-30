@@ -16,7 +16,7 @@ export interface AnalysisResult {
     insiderActivity: number;
     earningsCatalyst: number;
   };
-  sentimentAnalysis: AnalyzeNewsSentimentOutput & { headlines: string[] };
+  sentimentAnalysis: AnalyzeNewsSentimentOutput;
 }
 
 export interface Stock {
@@ -79,32 +79,26 @@ export async function getAnalysis(ticker: string): Promise<AnalysisResult> {
     throw new Error("Failed to fetch data from Finviz. The service may be down.");
   }
 
-  // Mock data for sentiment analysis
-  const mockNewsHeadlines = [
-    `${validatedTicker} announces record Q3 earnings, beating analyst expectations.`,
-    `New product launch from ${validatedTicker} receives positive initial reviews.`,
-    "Analyst upgrades ${validatedTicker} to 'Strong Buy' with a new $250 price target.",
-    "Global chip shortage could impact ${validatedTicker}'s production pipeline.",
-    "SEC launches inquiry into ${validatedTicker}'s accounting practices."
-  ];
-
-  const mockMarketSentimentScore = randomInRange(0.3, 0.8);
-
   let sentimentAnalysisResult: AnalyzeNewsSentimentOutput;
 
   try {
     sentimentAnalysisResult = await analyzeNewsSentiment({
         ticker: validatedTicker,
-        newsHeadlines: mockNewsHeadlines,
-        overallMarketSentimentScore: mockMarketSentimentScore
     });
   } catch(e) {
       console.error("AI sentiment analysis failed:", e);
       // Fallback in case AI fails
       sentimentAnalysisResult = {
-        sentimentPolarityScores: mockNewsHeadlines.map(() => randomInRange(-0.5, 0.5)),
+        sentimentPolarityScores: [0,0,0,0,0].map(() => randomInRange(-0.5, 0.5)),
         overallSentimentScore: randomInRange(-1, 1),
-        reasoning: "AI analysis was unavailable. This is a fallback based on random data."
+        reasoning: "AI analysis was unavailable. This is a fallback based on random data.",
+        headlines: [
+            `${validatedTicker} announces record Q3 earnings, beating analyst expectations.`,
+            `New product launch from ${validatedTicker} receives positive initial reviews.`,
+            `Analyst upgrades ${validatedTicker} to 'Strong Buy' with a new $250 price target.`,
+            `Global chip shortage could impact ${validatedTicker}'s production pipeline.`,
+            `SEC launches inquiry into ${validatedTicker}'s accounting practices.`
+        ]
       }
   }
 
@@ -127,9 +121,6 @@ export async function getAnalysis(ticker: string): Promise<AnalysisResult> {
     ticker: validatedTicker,
     expectedMove,
     scores,
-    sentimentAnalysis: {
-        ...sentimentAnalysisResult,
-        headlines: mockNewsHeadlines
-    },
+    sentimentAnalysis: sentimentAnalysisResult,
   };
 }
