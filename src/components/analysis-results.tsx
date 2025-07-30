@@ -176,24 +176,27 @@ function LoadingSkeleton() {
         <CardHeader>
           <Skeleton className="h-6 w-1/4" />
         </CardHeader>
-        <CardContent className="flex justify-around">
-           <div className="text-center">
-              <Skeleton className="h-10 w-24 mb-2" />
-              <Skeleton className="h-4 w-20" />
+        <CardContent className="grid md:grid-cols-3 gap-6 text-center">
+           <div>
+              <Skeleton className="h-4 w-24 mx-auto mb-2" />
+              <Skeleton className="h-10 w-28 mx-auto" />
+              <Skeleton className="h-4 w-20 mx-auto mt-2" />
            </div>
-            <div className="text-center">
-              <Skeleton className="h-10 w-24 mb-2" />
-              <Skeleton className="h-4 w-20" />
+            <div>
+              <Skeleton className="h-4 w-24 mx-auto mb-2" />
+              <Skeleton className="h-10 w-32 mx-auto" />
+              <Skeleton className="h-4 w-24 mx-auto mt-2" />
            </div>
-            <div className="text-center">
-              <Skeleton className="h-10 w-24 mb-2" />
-              <Skeleton className="h-4 w-20" />
+            <div>
+              <Skeleton className="h-4 w-24 mx-auto mb-2" />
+              <Skeleton className="h-14 w-full" />
            </div>
         </CardContent>
       </Card>
       <Card>
         <CardHeader>
           <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
         </CardHeader>
         <CardContent>
           <Skeleton className="h-4 w-full" />
