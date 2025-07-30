@@ -148,6 +148,14 @@ export const StockTable = React.forwardRef((props, ref) => {
     if (lowerStatus.includes('sideways')) return 'bg-yellow-500 text-black';
     return 'bg-gray-400 text-black';
   };
+  
+  const parseStatus = (status: string): { trend: string, range: string } => {
+    const match = status.match(/(.+?)\s*\((.+?)\)/);
+    if (match) {
+        return { trend: match[1], range: `(${match[2]})` };
+    }
+    return { trend: status, range: '' };
+  }
 
   return (
     <div className="w-full">
@@ -229,9 +237,10 @@ export const StockTable = React.forwardRef((props, ref) => {
                             </div>
                           </TableCell>
                            <TableCell className="text-center">
-                            <Badge className={cn("text-xs", getStatusColor(stock.analysis.status))}>
-                                {stock.analysis.status}
-                            </Badge>
+                             <div className={cn("inline-block px-2 py-1 rounded-md text-xs font-medium", getStatusColor(stock.analysis.status))}>
+                                <div>{parseStatus(stock.analysis.status).trend}</div>
+                                <div className="font-normal text-xs opacity-80">{parseStatus(stock.analysis.status).range}</div>
+                             </div>
                           </TableCell>
                         </>
                       ) : (
@@ -297,3 +306,5 @@ export const StockTable = React.forwardRef((props, ref) => {
 });
 
 StockTable.displayName = "StockTable";
+
+    
