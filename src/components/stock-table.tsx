@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Loader2, ArrowUpCircle, ArrowDownCircle, HelpCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, Loader2, ArrowUpCircle, ArrowDownCircle, HelpCircle, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AnalysisResults } from "@/components/analysis-results";
 import { useToast } from "@/hooks/use-toast";
@@ -20,12 +20,16 @@ import { Badge } from "@/components/ui/badge";
 
 const PAGE_SIZE = 10;
 
+type SortableColumn = 'ticker' | 'companyName' | 'price' | 'changePercent' | 'marketCap' | 'overallScore' | 'expectedMove' | 'status';
+type SortDirection = 'ascending' | 'descending';
+
 export const StockTable = React.forwardRef((props, ref) => {
   const [stocks, setStocks] = React.useState<Stock[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [totalStocks, setTotalStocks] = React.useState(0);
   const [expandedRows, setExpandedRows] = React.useState<Record<string, boolean>>({});
+  const [sortConfig, setSortConfig] = React.useState<{ key: SortableColumn; direction: SortDirection } | null>({ key: 'marketCap', direction: 'descending' });
   const rowRefs = React.useRef<Record<string, HTMLTableRowElement | null>>({});
 
   const { toast } = useToast();
@@ -48,15 +52,73 @@ export const StockTable = React.forwardRef((props, ref) => {
   React.useEffect(() => {
     fetchStocks(currentPage);
   }, [currentPage, fetchStocks]);
+  
+  const sortedStocks = React.useMemo(() => {
+    let sortableItems = [...stocks];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        const getVal = (item: Stock, key: SortableColumn) => {
+            if (key === 'overallScore' || key === 'expectedMove' || key === 'status') {
+                return item.analysis ? item.analysis[key] : null;
+            }
+            return item[key as keyof Stock];
+        }
+
+        const aVal = getVal(a, sortConfig.key);
+        const bVal = getVal(b, sortConfig.key);
+
+        if (aVal === null || bVal === null) return 0;
+        
+        if (typeof aVal === 'string' && typeof bVal === 'string') {
+            if (sortConfig.key === 'marketCap') {
+                const aNum = parseFloat(aVal.replace('T', '000').replace('B', ''));
+                const bNum = parseFloat(bVal.replace('T', '000').replace('B', ''));
+                 if (aNum < bNum) return sortConfig.direction === 'ascending' ? -1 : 1;
+                if (aNum > bNum) return sortConfig.direction === 'ascending' ? 1 : -1;
+                return 0;
+            }
+            if (aVal < bVal) return sortConfig.direction === 'ascending' ? -1 : 1;
+            if (aVal > bVal) return sortConfig.direction === 'ascending' ? 1 : -1;
+            return 0;
+        }
+
+        if (typeof aVal === 'number' && typeof bVal === 'number') {
+            if (aVal < bVal) return sortConfig.direction === 'ascending' ? -1 : 1;
+            if (aVal > bVal) return sortConfig.direction === 'ascending' ? 1 : -1;
+            return 0;
+        }
+        
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [stocks, sortConfig]);
+
+  const requestSort = (key: SortableColumn) => {
+    let direction: SortDirection = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  const getSortIcon = (columnName: SortableColumn) => {
+    if (!sortConfig || sortConfig.key !== columnName) {
+      return <ArrowUpDown className="h-4 w-4 ml-2 opacity-50" />;
+    }
+    if (sortConfig.direction === 'ascending') {
+      return <ChevronUp className="h-4 w-4 ml-2" />;
+    }
+    return <ChevronDown className="h-4 w-4 ml-2" />;
+  };
 
   React.useImperativeHandle(ref, () => ({
     focusOnTicker: async (ticker: string) => {
-      const stockOnPage = stocks.find(s => s.ticker === ticker);
+      const stockOnPage = stocks.find(s => s.ticker.toUpperCase() === ticker.toUpperCase());
       if (stockOnPage) {
-        setExpandedRows(prev => ({ [ticker]: !prev[ticker] }));
-        setTimeout(() => rowRefs.current[ticker]?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+        setExpandedRows(prev => ({ [ticker.toUpperCase()]: !prev[ticker.toUpperCase()] }));
+        setTimeout(() => rowRefs.current[ticker.toUpperCase()]?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
       } else {
-        // This logic is complex. For now, we just inform the user.
         toast({ title: "Not on current page", description: `Please navigate to the page containing ${ticker}.` });
       }
     }
@@ -94,14 +156,30 @@ export const StockTable = React.forwardRef((props, ref) => {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">S.N.</TableHead>
-              <TableHead>Ticker</TableHead>
-              <TableHead>Company Name</TableHead>
-              <TableHead className="text-right">Price (LTP)</TableHead>
-              <TableHead className="text-right">Change</TableHead>
-              <TableHead className="text-right">Market Cap</TableHead>
-              <TableHead className="text-center">MarketMind Score</TableHead>
-              <TableHead className="text-center">Expected Move</TableHead>
-              <TableHead className="text-center">Status</TableHead>
+              <TableHead className="cursor-pointer" onClick={() => requestSort('ticker')}>
+                  <div className="flex items-center">Ticker {getSortIcon('ticker')}</div>
+              </TableHead>
+              <TableHead className="cursor-pointer" onClick={() => requestSort('companyName')}>
+                  <div className="flex items-center">Company Name {getSortIcon('companyName')}</div>
+              </TableHead>
+              <TableHead className="text-right cursor-pointer" onClick={() => requestSort('price')}>
+                  <div className="flex items-center justify-end">Price (LTP) {getSortIcon('price')}</div>
+              </TableHead>
+              <TableHead className="text-right cursor-pointer" onClick={() => requestSort('changePercent')}>
+                  <div className="flex items-center justify-end">Change {getSortIcon('changePercent')}</div>
+              </TableHead>
+              <TableHead className="text-right cursor-pointer" onClick={() => requestSort('marketCap')}>
+                  <div className="flex items-center justify-end">Market Cap {getSortIcon('marketCap')}</div>
+              </TableHead>
+              <TableHead className="text-center cursor-pointer" onClick={() => requestSort('overallScore')}>
+                  <div className="flex items-center justify-center">MarketMind Score {getSortIcon('overallScore')}</div>
+              </TableHead>
+              <TableHead className="text-center cursor-pointer" onClick={() => requestSort('expectedMove')}>
+                  <div className="flex items-center justify-center">Expected Move {getSortIcon('expectedMove')}</div>
+              </TableHead>
+              <TableHead className="text-center cursor-pointer" onClick={() => requestSort('status')}>
+                  <div className="flex items-center justify-center">Status {getSortIcon('status')}</div>
+              </TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -114,7 +192,7 @@ export const StockTable = React.forwardRef((props, ref) => {
                     </TableCell>
                   </TableRow>
                 ))
-              : stocks.map((stock, index) => (
+              : sortedStocks.map((stock, index) => (
                   <React.Fragment key={stock.ticker}>
                     <TableRow ref={el => rowRefs.current[stock.ticker] = el}>
                       <TableCell>{(currentPage - 1) * PAGE_SIZE + index + 1}</TableCell>
