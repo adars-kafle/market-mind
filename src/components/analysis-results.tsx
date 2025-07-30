@@ -19,6 +19,7 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   HelpCircle,
+  Info,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -86,7 +87,7 @@ export function AnalysisResults({ analysis, isLoading }: AnalysisResultsProps) {
           <CardHeader>
               <CardTitle>Overall Analysis</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
               <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Overall Score</h4>
                   <p className={cn("text-4xl font-bold mt-1", overallSentiment.color)}>
@@ -107,6 +108,15 @@ export function AnalysisResults({ analysis, isLoading }: AnalysisResultsProps) {
                       </span>
                    </div>
                    <p className="text-sm text-muted-foreground mt-1">in the short-term</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
+                <div className="flex items-center justify-center mt-2">
+                    <Info className="h-8 w-8 text-blue-500" />
+                    <p className="text-lg font-semibold ml-2 text-blue-600">
+                        {analysis.status}
+                    </p>
+                </div>
               </div>
               <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Final Insight</h4>
@@ -176,11 +186,16 @@ function LoadingSkeleton() {
         <CardHeader>
           <Skeleton className="h-6 w-1/4" />
         </CardHeader>
-        <CardContent className="grid md:grid-cols-3 gap-6 text-center">
+        <CardContent className="grid md:grid-cols-4 gap-6 text-center">
            <div>
               <Skeleton className="h-4 w-24 mx-auto mb-2" />
               <Skeleton className="h-10 w-28 mx-auto" />
               <Skeleton className="h-4 w-20 mx-auto mt-2" />
+           </div>
+            <div>
+              <Skeleton className="h-4 w-24 mx-auto mb-2" />
+              <Skeleton className="h-10 w-32 mx-auto" />
+              <Skeleton className="h-4 w-24 mx-auto mt-2" />
            </div>
             <div>
               <Skeleton className="h-4 w-24 mx-auto mb-2" />

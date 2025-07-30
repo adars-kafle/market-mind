@@ -7,6 +7,7 @@ export interface AnalysisResult {
   ticker: string;
   expectedMove: number;
   overallScore: number;
+  status: string;
   scores: {
     sentiment: number;
     technicalPatterns: number;
@@ -26,6 +27,7 @@ export interface Stock {
     change: number;
     changePercent: number;
     marketCap: string;
+    analysis?: AnalysisResult;
 }
 
 const tickerSchema = z.string().min(1).max(10);
@@ -33,7 +35,7 @@ const tickerSchema = z.string().min(1).max(10);
 // Helper to generate a random number in a range
 const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
-const mockStocks: Stock[] = [
+const mockStocks: Omit<Stock, 'analysis'>[] = [
     { ticker: "AAPL", companyName: "Apple Inc.", price: 172.25, change: 1.50, changePercent: 0.88, marketCap: "2.8T" },
     { ticker: "MSFT", companyName: "Microsoft Corp.", price: 340.54, change: -0.23, changePercent: -0.07, marketCap: "2.5T" },
     { ticker: "GOOGL", companyName: "Alphabet Inc.", price: 138.58, change: 2.12, changePercent: 1.55, marketCap: "1.7T" },
@@ -51,20 +53,60 @@ const mockStocks: Stock[] = [
     { ticker: "CRM", companyName: "Salesforce, Inc.", price: 220.88, change: -1.90, changePercent: -0.85, marketCap: "215B" },
 ];
 
+function getStatusFromReasoning(reasoning: string): string {
+    const lowercasedReasoning = reasoning.toLowerCase();
+    if (lowercasedReasoning.includes("strong bullish") || lowercasedReasoning.includes("60-80")) {
+        return "Strong Bullish (60-80)";
+    }
+    if (lowercasedReasoning.includes("bullish") || lowercasedReasoning.includes("40-80")) {
+        return "Bullish (40-80)";
+    }
+    if (lowercasedReasoning.includes("strong bearish") || lowercasedReasoning.includes("40-20")) {
+        return "Strong Bearish (40-20)";
+    }
+    if (lowercasedReasoning.includes("bearish") || lowercasedReasoning.includes("60-20")) {
+        return "Bearish (60-20)";
+    }
+    if (lowercasedReasoning.includes("sideways") || lowercasedReasoning.includes("40-60")) {
+        return "Sideways (40-60)";
+    }
+    return "Neutral";
+}
+
 
 export async function getStocks(page: number, pageSize: number): Promise<{stocks: Stock[], total: number}> {
     await new Promise(resolve => setTimeout(resolve, 500));
     const start = (page - 1) * pageSize;
     const end = start + pageSize;
+    const paginatedStocks = mockStocks.slice(start, end);
+    
+    // In a real app, you might do this fetching in parallel
+    const stocksWithAnalysis: Stock[] = [];
+    for (const stock of paginatedStocks) {
+        try {
+            const analysis = await getAnalysis(stock.ticker);
+            stocksWithAnalysis.push({ ...stock, analysis });
+        } catch (error) {
+            console.error(`Failed to get analysis for ${stock.ticker}`, error);
+            // Add stock without analysis if the call fails
+            stocksWithAnalysis.push({ ...stock, analysis: undefined });
+        }
+    }
+
     return {
-        stocks: mockStocks.slice(start, end),
+        stocks: stocksWithAnalysis,
         total: mockStocks.length,
     };
 }
 
 export async function getStockByTicker(ticker: string): Promise<Stock | undefined> {
     await new Promise(resolve => setTimeout(resolve, 100));
-    return mockStocks.find(stock => stock.ticker.toUpperCase() === ticker.toUpperCase());
+    const stock = mockStocks.find(stock => stock.ticker.toUpperCase() === ticker.toUpperCase());
+    if (stock) {
+        const analysis = await getAnalysis(ticker);
+        return { ...stock, analysis };
+    }
+    return undefined;
 }
 
 
@@ -96,7 +138,7 @@ export async function getAnalysis(ticker: string): Promise<AnalysisResult> {
       sentimentAnalysisResult = {
         sentimentPolarityScores: [0,0,0,0,0].map(() => randomInRange(-0.5, 0.5)),
         overallSentimentScore: randomInRange(-1, 1),
-        reasoning: "AI analysis was unavailable. This is a fallback based on random data.",
+        reasoning: "AI analysis was unavailable. This is a fallback based on random data. The trend is currently sideways (40-60).",
         headlines: [
             `${validatedTicker} announces record Q3 earnings, beating analyst expectations.`,
             `New product launch from ${validatedTicker} receives positive initial reviews.`,
@@ -130,6 +172,7 @@ export async function getAnalysis(ticker: string): Promise<AnalysisResult> {
       (scores.analystSentiment * 0.08);
 
   const expectedMove = (weightedScore / 10 - 0.5) * 5; 
+  const status = getStatusFromReasoning(sentimentAnalysisResult.reasoning);
 
   return {
     ticker: validatedTicker,
@@ -137,5 +180,6 @@ export async function getAnalysis(ticker: string): Promise<AnalysisResult> {
     overallScore: weightedScore,
     scores,
     sentimentAnalysis: sentimentAnalysisResult,
+    status,
   };
 }
