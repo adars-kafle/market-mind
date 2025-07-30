@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ScoreCard } from "@/components/score-card";
 import {
   TrendingUp,
   Activity,
@@ -19,11 +18,13 @@ import {
   Zap,
   ArrowDown,
   ArrowUp,
-  Minus
+  Minus,
+  HelpCircle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { AnalysisTable } from "./analysis-table";
 
 
 interface AnalysisResultsProps {
@@ -31,7 +32,7 @@ interface AnalysisResultsProps {
   isLoading: boolean;
 }
 
-const scoreIcons: { [key: string]: React.ReactNode } = {
+export const scoreIcons: { [key: string]: React.ReactNode } = {
   technicalPatterns: <TrendingUp className="h-4 w-4" />,
   movingAverage: <Activity className="h-4 w-4" />,
   relativeStrength: <Scaling className="h-4 w-4" />,
@@ -42,21 +43,7 @@ const scoreIcons: { [key: string]: React.ReactNode } = {
   earningsCatalyst: <Zap className="h-4 w-4" />,
 };
 
-const scoreColors: { [key: string]: string } = {
-    default: 'bg-primary',
-    positive: 'bg-green-500',
-    negative: 'bg-red-500',
-    neutral: 'bg-gray-500'
-};
-
-const getScoreColor = (key: string, score: number) => {
-    if (key === 'shortInterest') {
-        return score > 5 ? scoreColors.negative : scoreColors.positive;
-    }
-    return score > 6 ? scoreColors.positive : score < 4 ? scoreColors.negative : scoreColors.neutral;
-}
-
-const scoreTitles: { [key: string]: string } = {
+export const scoreTitles: { [key: string]: string } = {
   technicalPatterns: "Technical Patterns",
   movingAverage: "Moving Average",
   relativeStrength: "Relative Strength",
@@ -66,6 +53,27 @@ const scoreTitles: { [key: string]: string } = {
   insiderActivity: "Insider Activity",
   earningsCatalyst: "Earnings Catalyst",
 };
+
+const getOverallRecommendation = (score: number): {
+    recommendation: string,
+    Icon: React.ElementType,
+    color: string,
+    description: string,
+} => {
+    if (score > 7) {
+        return { recommendation: "Strong Buy", Icon: ArrowUp, color: "text-green-500", description: "All indicators suggest a strong upward potential." };
+    }
+    if (score > 5) {
+        return { recommendation: "Buy", Icon: TrendingUp, color: "text-green-400", description: "Positive indicators outweigh the negative ones." };
+    }
+    if (score > 3) {
+        return { recommendation: "Hold", Icon: Minus, color: "text-gray-500", description: "Indicators are mixed; caution is advised." };
+    }
+    if (score > 1) {
+        return { recommendation: "Sell", Icon: TrendingDown, color: "text-red-400", description: "Negative indicators outweigh the positive ones." };
+    }
+    return { recommendation: "Strong Sell", Icon: ArrowDown, color: "text-red-500", description: "All indicators suggest a strong downward potential." };
+}
 
 export function AnalysisResults({ analysis, isLoading }: AnalysisResultsProps) {
   if (isLoading) {
@@ -82,20 +90,20 @@ export function AnalysisResults({ analysis, isLoading }: AnalysisResultsProps) {
   }
   
   const overallScore = Object.values(analysis.scores).reduce((a, b) => a + b, 0) / Object.values(analysis.scores).length;
+  const { recommendation, Icon, color, description } = getOverallRecommendation(overallScore);
 
   return (
     <div className="space-y-6">
        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card className="lg:col-span-1 shadow-md hover:shadow-lg transition-shadow duration-300">
             <CardHeader>
-              <CardTitle>Overall Score</CardTitle>
-              <CardDescription>Aggregated from all factors for {analysis.ticker}</CardDescription>
+              <CardTitle>Final Insight</CardTitle>
+              <CardDescription>Actionable recommendation for {analysis.ticker}</CardDescription>
             </CardHeader>
-            <CardContent className="text-center">
-                <div className={`mx-auto h-24 w-24 rounded-full flex items-center justify-center text-white ${getScoreColor('default', overallScore)}`}>
-                    <span className="font-bold text-4xl">{overallScore.toFixed(1)}</span>
-                </div>
-                 <p className="mt-4 font-semibold text-lg">{overallScore > 7 ? 'Strong Buy Signal' : overallScore > 5 ? 'Potential Buy' : overallScore > 3 ? 'Neutral / Hold' : 'Potential Sell'}</p>
+            <CardContent className="text-center flex flex-col items-center justify-center">
+                <Icon className={`h-16 w-16 mb-2 ${color}`} />
+                <p className={`font-bold text-2xl ${color}`}>{recommendation}</p>
+                <p className="mt-2 text-muted-foreground text-sm">{description}</p>
             </CardContent>
           </Card>
           <Card className="lg:col-span-2 shadow-md hover:shadow-lg transition-shadow duration-300">
@@ -112,7 +120,6 @@ export function AnalysisResults({ analysis, isLoading }: AnalysisResultsProps) {
                     <ul className="space-y-2">
                         {analysis.sentimentAnalysis.headlines.map((headline, index) => {
                             const score = analysis.sentimentAnalysis.sentimentPolarityScores[index];
-                            const badgeVariant = score > 0.2 ? 'default' : score < -0.2 ? 'destructive' : 'secondary';
                             const badgeColor = score > 0.2 ? 'bg-green-500 hover:bg-green-600' : score < -0.2 ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-500 hover:bg-gray-600';
                             return (
                                 <li key={index} className="flex items-center justify-between text-sm p-2 rounded-md hover:bg-muted">
@@ -129,17 +136,15 @@ export function AnalysisResults({ analysis, isLoading }: AnalysisResultsProps) {
           </Card>
         </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {Object.entries(analysis.scores).map(([key, value]) => (
-          <ScoreCard
-            key={key}
-            title={scoreTitles[key]}
-            score={value}
-            icon={scoreIcons[key]}
-            colorClass={getScoreColor(key, value)}
-          />
-        ))}
-      </div>
+      <Card>
+        <CardHeader>
+            <CardTitle>Detailed Analysis Breakdown</CardTitle>
+            <CardDescription>Quantitative scores for each analysis factor.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <AnalysisTable scores={analysis.scores} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -152,21 +157,23 @@ function LoadingSkeleton() {
         <Card className="lg:col-span-1"><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-24 w-24 rounded-full mx-auto" /><Skeleton className="h-6 w-1/2 mx-auto mt-4" /></CardContent></Card>
         <Card className="lg:col-span-2"><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6 mt-2" /><Skeleton className="h-10 w-full mt-4" /></CardContent></Card>
       </div>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(8)].map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <Skeleton className="h-5 w-2/3" />
-              <Skeleton className="h-6 w-6 rounded-md" />
+       <Card>
+            <CardHeader>
+                <Skeleton className="h-6 w-1/2" />
+                <Skeleton className="h-4 w-3/4" />
             </CardHeader>
             <CardContent>
-              <Skeleton className="h-8 w-1/3" />
-              <Skeleton className="h-4 w-1/2 mt-1" />
-              <Skeleton className="h-2 w-full mt-4" />
+                <div className="space-y-4">
+                    {[...Array(8)].map((_, i) => (
+                        <div key={i} className="flex items-center">
+                            <Skeleton className="h-5 w-5 rounded-full" />
+                            <Skeleton className="h-4 w-1/3 ml-4" />
+                            <Skeleton className="h-8 w-1/4 ml-auto" />
+                        </div>
+                    ))}
+                </div>
             </CardContent>
-          </Card>
-        ))}
-      </div>
+        </Card>
     </div>
   );
 }
