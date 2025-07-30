@@ -55,19 +55,19 @@ const mockStocks: Omit<Stock, 'analysis'>[] = [
 
 function getStatusFromReasoning(reasoning: string): string {
     const lowercasedReasoning = reasoning.toLowerCase();
-    if (lowercasedReasoning.includes("strong bullish") || lowercasedReasoning.includes("60-80")) {
+    if (lowercasedReasoning.includes("strong bullish") || /60-80/.test(lowercasedReasoning)) {
         return "Strong Bullish (60-80)";
     }
-    if (lowercasedReasoning.includes("bullish") || lowercasedReasoning.includes("40-80")) {
+    if (lowercasedReasoning.includes("bullish") || /40-80/.test(lowercasedReasoning)) {
         return "Bullish (40-80)";
     }
-    if (lowercasedReasoning.includes("strong bearish") || lowercasedReasoning.includes("40-20")) {
+    if (lowercasedReasoning.includes("strong bearish") || /40-20/.test(lowercasedReasoning)) {
         return "Strong Bearish (40-20)";
     }
-    if (lowercasedReasoning.includes("bearish") || lowercasedReasoning.includes("60-20")) {
+    if (lowercasedReasoning.includes("bearish") || /60-20/.test(lowercasedReasoning)) {
         return "Bearish (60-20)";
     }
-    if (lowercasedReasoning.includes("sideways") || lowercasedReasoning.includes("40-60")) {
+    if (lowercasedReasoning.includes("sideways") || /40-60/.test(lowercasedReasoning) || /60-40/.test(lowercasedReasoning)) {
         return "Sideways (40-60)";
     }
     return "Neutral";
@@ -127,18 +127,20 @@ export async function getAnalysis(ticker: string): Promise<AnalysisResult> {
   }
 
   let sentimentAnalysisResult: AnalyzeNewsSentimentOutput;
+  let status: string;
 
   try {
     sentimentAnalysisResult = await analyzeNewsSentiment({
         ticker: validatedTicker,
     });
+    status = getStatusFromReasoning(sentimentAnalysisResult.reasoning);
   } catch(e) {
       console.error("AI sentiment analysis failed:", e);
       // Fallback in case AI fails
       sentimentAnalysisResult = {
         sentimentPolarityScores: [0,0,0,0,0].map(() => randomInRange(-0.5, 0.5)),
         overallSentimentScore: randomInRange(-1, 1),
-        reasoning: "AI analysis was unavailable. This is a fallback based on random data. The trend is currently sideways (40-60).",
+        reasoning: "AI analysis was unavailable. This is a fallback based on random data.",
         headlines: [
             `${validatedTicker} announces record Q3 earnings, beating analyst expectations.`,
             `New product launch from ${validatedTicker} receives positive initial reviews.`,
@@ -147,6 +149,7 @@ export async function getAnalysis(ticker: string): Promise<AnalysisResult> {
             `SEC launches inquiry into ${validatedTicker}'s accounting practices.`
         ]
       }
+      status = "Neutral";
   }
 
 
@@ -172,7 +175,6 @@ export async function getAnalysis(ticker: string): Promise<AnalysisResult> {
       (scores.analystSentiment * 0.08);
 
   const expectedMove = (weightedScore / 10 - 0.5) * 5; 
-  const status = getStatusFromReasoning(sentimentAnalysisResult.reasoning);
 
   return {
     ticker: validatedTicker,

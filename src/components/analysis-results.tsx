@@ -60,6 +60,16 @@ const getScoreColor = (key: string, score: number) => {
     return score > 6 ? "bg-green-500" : score < 4 ? "bg-red-500" : "bg-yellow-500";
 }
 
+const getStatusColor = (status: string) => {
+    const lowerStatus = status.toLowerCase();
+    if (lowerStatus.includes('strong bullish')) return 'bg-green-600 text-white';
+    if (lowerStatus.includes('bullish')) return 'bg-green-500 text-white';
+    if (lowerStatus.includes('strong bearish')) return 'bg-red-600 text-white';
+    if (lowerStatus.includes('bearish')) return 'bg-red-500 text-white';
+    if (lowerStatus.includes('sideways')) return 'bg-yellow-500 text-black';
+    return 'bg-gray-400 text-black';
+  };
+
 
 export function AnalysisResults({ analysis, isLoading }: AnalysisResultsProps) {
   if (isLoading) {
@@ -112,10 +122,9 @@ export function AnalysisResults({ analysis, isLoading }: AnalysisResultsProps) {
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
                 <div className="flex items-center justify-center mt-2">
-                    <Info className="h-8 w-8 text-blue-500" />
-                    <p className="text-lg font-semibold ml-2 text-blue-600">
+                    <Badge className={cn("text-lg px-4 py-2", getStatusColor(analysis.status))}>
                         {analysis.status}
-                    </p>
+                    </Badge>
                 </div>
               </div>
               <div>
